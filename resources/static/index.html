@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일정 관리 시스템</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .schedule-form, .schedule-list {
+            margin-bottom: 20px;
+        }
+        .schedule-form input, .schedule-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .schedule-form button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .schedule-list table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .schedule-list table th, .schedule-list table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .schedule-list table th {
+            background-color: #f2f2f2;
+        }
+        .schedule-list button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .schedule-list button.edit {
+            background-color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>일정 관리 시스템</h1>
+</header>
+<div class="container">
+    <!-- 일정 생성 및 수정 폼 -->
+    <div class="schedule-form">
+        <h2 id="formTitle">일정 생성</h2>
+        <form id="scheduleForm">
+            <input type="hidden" id="scheduleId">
+            <input type="text" id="username" placeholder="이름" required>
+            <input type="passward" id="passward" placeholder="비밀번호" required>
+            <input type="text" id="title" placeholder="제목" required>
+            <textarea id="contents" rows="5" placeholder="내용" required></textarea>
+            <button type="submit">일정 저장</button>
+        </form>
+    </div>
+
+    <!-- 일정 목록 -->
+    <div class="schedule-list">
+        <h2>일정 목록</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>이름</th>
+                <th>제목</th>
+                <th>내용</th>
+                <th>수정</th>
+                <th>삭제</th>
+            </tr>
+            </thead>
+            <tbody id="scheduleList">
+            <!-- 일정 목록이 여기에 동적으로 추가됩니다 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // 서버 API URL 설정
+    const apiUrl = 'http://localhost:8080/api/schedule';
+
+    // 일정 추가 및 수정 폼 제출 이벤트 처리
+    document.getElementById('scheduleForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const scheduleId = document.getElementById('scheduleId').value;
+        const scheduleData = {
+            username: document.getElementById('username').value,
+            passward: document.getElementById('passward').value,
+            title: document.getElementById('title').value,
+            contents: document.getElementById('contents').value
+        };
+
+        if (scheduleId) {
+            const response = await fetch(`${apiUrl}/${scheduleId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(scheduleData)
+            });
+
+            if (response.ok) {
+                alert('일정이 성공적으로 수정되었습니다.');
+            } else {
+                alert('일정 수정에 실패했습니다.');
+            }
+        } else {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(scheduleData)
+            });
+
+            if (response.ok) {
+                alert('일정이 성공적으로 추가되었습니다!');
+            } else {
+                alert('일정 추가에 실패했습니다.');
+            }
+        }
+
+        document.getElementById('scheduleForm').reset();
+        loadSchedules();
+    });
+
+    // 일정 목록 불러오기
+    async function loadSchedules() {
+        const response = await fetch(apiUrl);
+        const schedules = await response.json();
+
+        const scheduleList = document.getElementById('scheduleList');
+        scheduleList.innerHTML = '';
+
+        schedules.forEach((schedule) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                    <td>${schedule.username}</td>
+                    <td>${schedule.title}</td>
+                    <td>${schedule.contents}</td>
+                    <td><button class="edit" onclick="editSchedule(${schedule.id})">수정</button></td>
+                    <td><button onclick="deleteSchedule(${schedule.id})">삭제</button></td>
+                `;
+            scheduleList.appendChild(row);
+        });
+    }
+
+    // 일정 삭제 함수
+    async function deleteSchedule(id) {
+        const response = await fetch(`${apiUrl}/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            alert('일정이 삭제되었습니다.');
+            loadSchedules();
+        } else {
+            alert('일정 삭제에 실패했습니다.');
+        }
+    }
+
+    // 일정 수정 함수
+    async function editSchedule(id) {
+        const response = await fetch(`${apiUrl}/${id}`);
+        const schedule = await response.json();
+
+        document.getElementById('scheduleId').value = schedule.id;
+        document.getElementById('username').value = schedule.username;
+        document.getElementById('passward').value = schedule.passward;
+        document.getElementById('title').value = schedule.title;
+        document.getElementById('contents').value = schedule.contents;
+
+        document.getElementById('formTitle').textContent = '일정 수정';
+    }
+
+    loadSchedules();
+</script>
+</body>
+</html>
