@@ -1,4 +1,5 @@
 ![image](https://github.com/user-attachments/assets/c44bbb5f-739f-488b-a576-515aeffda53f)
+![image](https://github.com/user-attachments/assets/ff84073d-670c-4ba7-ab8a-f92dbdf44cf5)
 
 
 이 프로젝트는 Spring Boot를 사용하여 일정 관리 시스템의 RESTful API를 구현했다. 
